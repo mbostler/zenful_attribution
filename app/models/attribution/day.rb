@@ -12,19 +12,62 @@
 
 class Attribution::Day < ActiveRecord::Base
   belongs_to :portfolio, class_name: "Attribution::Portfolio"
-  has_many :holdings, class_name: "Attribution::Holding"
+  has_many :holdings, class_name: "Attribution::Holding", dependent: :destroy
   
   validates :date, presence: true, uniqueness: { scope: :portfolio_id }
   
-  before_create :ensure_daily_returns_are_calculated
+  before_create :ensure_axys_data_is_created
+  after_create :calculate_daily_returns
   
-  def ensure_daily_returns_are_calculated
-    ensure_axys_data_is_created
+  # def ensure_daily_returns_are_calculated
+  #   ensure_axys_data_is_created
+  # end
+  #
+  def calculate_daily_returns
+    puts "permitted_axys_holdings is : " + permitted_axys_holdings.inspect
+    permitted_axys_holdings.each do |axys_holding|
+      unless holdings.exists? company_id: axys_holding.company_id
+        holdings.create! :axys_holding => axys_holding
+      end
+    end
+    
+    holdings.each(&:update_calcs)
+    
+    update_performance
+  end
+  
+  def recalc!
+    holdings.destroy_all
     calculate_daily_returns
   end
   
-  def calculate_daily_returns
+  def update_performance
+    bmv_value =  summed_holdings :bmv_value
+    emv_value =  summed_holdings :emv_value
+    txns_value = summed_holdings :txns_value
+    perf = Attribution::PerformanceCalculator.calc :bmv_value => bmv_value,
+                                      :emv_value => emv_value,
+                                      :txns_value => txns_value
+    update_attribute :performance, perf
+  end
+  
+  def summed_holdings( sym )
+    holdings.inject( BigDecimal("0.0") ) { |s, h| s += h.send( sym ) }
+  end
+  
+  def audit
+    old_logger = ActiveRecord::Base.logger
+    ActiveRecord::Base.logger = nil
     
+    puts "BMV:  #{summed_holdings(:bmv_value)}"
+    puts "EMV:  #{summed_holdings(:emv_value)}"
+    puts "TXNS: #{summed_holdings(:txns_value)}"
+    puts "P:    #{summed_holdings(:purchases_value)}"
+    puts "S:    #{summed_holdings(:sales_value)}"
+    puts "I:    #{summed_holdings(:income_value)}"
+
+    ActiveRecord::Base.logger = old_logger
+    self
   end
   
   def ensure_axys_data_is_created
@@ -48,5 +91,69 @@ class Attribution::Day < ActiveRecord::Base
   
   def axys_portfolio
     @axys_portfolio ||= portfolio.axys_portfolio
+  end
+  
+  def permitted_axys_holdings
+    axys_holdings.select(&:permitted?)
+  end
+  
+  def axys_holdings
+    axys_portfolio.holdings.where( date: date )
+  end
+
+  def bmv_value
+    holdings.inject( BigDecimal( "0.0" ) ) { |s, hld| s += hld.bmv_value }
+  end
+
+  def audit_transactions
+    old_logger = ActiveRecord::Base.logger
+    ActiveRecord::Base.logger = nil
+    txns = axys_portfolio.transactions.sort_by { |txn| txn.company.tag }
+    
+    puts "===================================================================="
+    puts "| #{txns.size} Transactions for #{portfolio.name} on #{date.strftime('%m/%d/%Y')}"
+    puts "--------------------------------------------------------------------"
+    txns.each do |txn|
+      puts "| #{txn.inspect}"
+    end
+    puts "====================================================================\n"
+    
+    ActiveRecord::Base.logger = old_logger
+    self
+  end
+  alias_method :adt, :audit_transactions
+  
+  def audit_holdings
+    holdings.sort_by { |h| h.company.tag }.each do |h|
+      puts h.inspect
+    end
+
+    puts "DAILY PERFORMANCE FOR #{axys_portfolio.name} on #{date}: #{performance}, ie: #{pretty_performance}"
+    
+    summed_perf = (holdings.inject(BigDecimal("0.0") ) { |s, h| s += h.contribution } * 100).round(6)
+    adj_calcd_perf = ((performance-1)*100).round(6)
+    if summed_perf == adj_calcd_perf
+      puts "CHECK: OK! Perf is #{adj_calcd_perf}%"
+    else
+      puts "CHECK: BAD : calc'd perf is #{adj_calcd_perf}, summed perf is #{summed_perf}"
+    end
+  end
+  alias_method :adh, :audit_holdings
+  
+  def pretty_performance
+    '%.5f %' % ((performance-1)*100)
+  end
+  
+  def pperf
+    if self.performance
+      ((self.performance - 1)*100).to_f.round(5).to_s + " %"
+    else
+      puts "performance hasn't been calc'd yet! #{self.inspect}"
+    end
+  end
+  
+  def inspect
+    fmt = "%m/%d/%y %H:%M:%S%p"
+    "#<Attribution::Day ##{id} #{portfolio.name}|##{portfolio_id} on #{date} : #{pperf} | #{created_at.strftime(fmt)}|#{updated_at.strftime(fmt)}"
   end
 end

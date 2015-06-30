@@ -25,21 +25,76 @@
 
 class AxysSystem::Transaction < ActiveRecord::Base
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
+  belongs_to :company, class_name: "AxysSystem::Company"
+  belongs_to :holding, class_name: "Attribution::Holding"
   
   attr_accessor :company_attribs
+  
+  CREDIT_CODES = {
+    by: false,
+    in: false,
+    dp: false,
+    sl: true
+  }
 
   [:security, :cusip, :symbol].each do |sym|
     attr_accessor sym
     define_method sym.to_s + "=" do |arg|
       @company_attribs ||= {}
-      @company_attribs[sym] = arg
+      if sym == :symbol
+        @company_attribs[:code] = arg
+      else
+        @company_attribs[sym] = arg
+      end
     end
   end
   
   before_save :associate_company
     
   def associate_company
-    co = AxysSystem::Company.find_or_create_from_attribs!( @company_attribs )
-    self.company_id = co.id
+    unless @company_attribs.nil? || @company_attribs.empty?
+      co = AxysSystem::Company.find_or_create_from_attribs!( @company_attribs )
+      self.company_id = co.id
+    end
+  end
+  
+  def inspect
+    msg = ""
+    msg = "<# AxysSystem::Transaction ##{id.to_s.ljust(5)} "
+    msg << "[#{company.tag}]#{cusip}|#{symbol}".ljust(25)
+    msg << "#{quantity.to_i}@$#{'%.2f' % trade_amount }".ljust(23)
+    msg << "Cd: #{code}".ljust(8)
+    msg << "Sec: #{security}".ljust(5)
+    msg << "SD-TYPE: #{sd_type}".ljust(15)
+    msg << "SD-SYM: #{sd_symbol} "
+  end
+  
+  def credit?
+    res = CREDIT_CODES[code.to_sym]
+    if res.nil?
+      raise "not sure whether to treat this transaction as a credit or a debit! #{self.inspect}"
+    end
+    res
+  end
+  
+  def debit?
+    !credit?
+  end
+
+  def permitted?
+    return false if company and company.excluded?
+    true
+  end
+  
+  def income?
+    ["in"].include? code.downcase    
+  end
+  
+  def accumulating?
+    ["dp", "by"].include? code.downcase    
+  end
+
+  def decrementing?
+    ["sl"].include? code.downcase    
   end
 end

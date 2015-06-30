@@ -21,7 +21,7 @@ def spec_file( file )
     it "should compute #{spec_rep.portfolio_name} contribution on #{spec_rep.start_date}-#{spec_rep.end_date} for #{h[:ticker]} is #{h[:contribution]}" do
       results_for_ticker = rep.results[h[:ticker]]
       expect( results_for_ticker ).to_not be_blank
-      expect( h[:contribution].to_f ).to eq( results_for_ticker[:contribution].to_f )
+      expect( h[:contribution].to_f.round(5) ).to eq( (results_for_ticker[:contribution]*100).to_f.round(5) )
     end
   end
   

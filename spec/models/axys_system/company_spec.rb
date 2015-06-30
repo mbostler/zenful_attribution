@@ -10,6 +10,7 @@
 #  security   :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  symbol     :string
 #
 
 require 'rails_helper'

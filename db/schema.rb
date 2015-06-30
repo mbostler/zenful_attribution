@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150623165703) do
+ActiveRecord::Schema.define(version: 20150624223503) do
 
   create_table "attribution_days", force: :cascade do |t|
     t.integer  "portfolio_id"
@@ -44,6 +44,7 @@ ActiveRecord::Schema.define(version: 20150623165703) do
     t.string   "security"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string   "symbol"
   end
 
   create_table "axys_system_holdings", force: :cascade do |t|

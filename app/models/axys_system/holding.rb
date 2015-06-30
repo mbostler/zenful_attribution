@@ -22,6 +22,8 @@
 class AxysSystem::Holding < ActiveRecord::Base
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
   belongs_to :company, class_name: "AxysSystem::Company"
+  belongs_to :bmv_holding, class_name: "Attribution::Holding", foreign_key: :bmv_holding_id
+  belongs_to :emv_holding, class_name: "Attribution::Holding", foreign_key: :emv_holding_id
 
   attr_accessor :company_attribs
   
@@ -36,7 +38,14 @@ class AxysSystem::Holding < ActiveRecord::Base
   before_save :associate_company
     
   def associate_company
-    co = AxysSystem::Company.find_or_create_from_attribs!( @company_attribs )
-    self.company_id = co.id
+    unless @company_attribs.nil? || @company_attribs.empty?
+      co = AxysSystem::Company.find_or_create_from_attribs!( @company_attribs )
+      self.company_id = co.id
+    end
+  end
+  
+  def permitted?
+    return false if company and company.excluded?
+    true
   end
 end

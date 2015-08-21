@@ -40,7 +40,7 @@ class AxysSystem::Company < ActiveRecord::Base
   end
   
   def tag
-    tag = ticker || code || symbol
+    (ticker || code || symbol).upcase
   end
 end
   

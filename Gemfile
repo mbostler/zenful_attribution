@@ -1,15 +1,15 @@
 source 'https://rubygems.org'
 
-# source 'http://daruma-axys:8808' do
+source 'http://daruma-axys:8808' do
 # # #   ### AXYS ###
-#   gem 'axys', '>= 0.3.5'
+  gem 'axys', '>= 0.3.10'
 # # # TODO: update axys gem version!
 # # # gem 'axys', '>= 0.3.2'
 # # #   ### AXYS ###
-# end
+end
 
 gem 'gserver'
-gem 'axys', source: 'http://daruma-axys:8808'
+# gem 'axys', source: 'http://daruma-axys:8808'
 
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
@@ -62,6 +62,6 @@ group :development, :test do
   gem 'guard-cucumber'
   gem 'rb-fsevent' #if `uname` =~ /Darwin/
   gem 'annotate'
-  gem 'axys', source: 'http://daruma-axys:8808'
+  # gem 'axys', source: 'http://daruma-axys:8808'
 end
 

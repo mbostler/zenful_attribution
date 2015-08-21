@@ -1,4 +1,5 @@
 class Report
+  include Auditing
   attr_accessor :portfolio_name, :start_date, :end_date, :results, :total_results, :portfolio
   
   def initialize( portfolio_name, start_date, end_date )
@@ -25,17 +26,24 @@ class Report
   def calculate!
     @portfolio = Attribution::Portfolio.where( name: @portfolio_name ).first_or_create
     
-    @portfolio.days.destroy_all # TODO: remove this after testing over!
+    # @portfolio.days.destroy_all # TODO: remove this after testing over!
     
     ensure_portfolio_days_are_present @portfolio, @start_date, @end_date
     
-    @total_results = {}
-    puts "SET"
+    @total_results = collect_total_results
     @results = collect_results
     audit
     self
   end
   alias_method :calc, :calculate!
+  
+  def collect_total_results
+    total_performance = days.map(&:performance).inject( BigDecimal("1.0") ) { |s, x| s *= x }
+        
+    {
+      performance: total_performance
+    }
+  end
   
   def audit
     @results.each do |tag, result|
@@ -45,34 +53,35 @@ class Report
     end
   end
   
-  def perf2string( num )
-    proper_num_to_pretty_num num-1
-  end
-  
-  def contrib2string( num )
-    proper_num_to_pretty_num num
-  end
-  
-  def proper_num_to_pretty_num( x )
-    '%0.4f %' % (x.to_f*100)
+  def a( t )
+    without_logging do
+      tag = t.upcase
+      puts "auditing #{tag}"
+    
+      if @results[tag].nil?
+        puts "could not find results for #{tag}"
+        return
+      end
+    
+      puts "#{tag} --- performance: #{pp @results[tag][:performance]-1} contribution: #{pp @results[tag][:contribution]}"
+      days_by_holding[tag].reverse.each do |h|
+        msg = "#<Attribution::Holding ##{h.id} "
+        msg << "[#{h.tag}]".ljust( 10 )
+        msg << "#{h.day.date.strftime('%a, %m/%d/%y')} "
+        msg << "perf: #{pp (h.performance-1)} ".ljust( 12 )
+        msg << "contrib: #{h.contribution ? ('% 4.5f %' % (h.contribution*100)) : 'NIL'} ".ljust( 12 )
+        mult = cumulative_performance_multiplier( h.day.date )
+        msg << "multiplier: #{mult.to_f.round( 6 )}".ljust( 12 )
+        puts msg
+      end
+      puts "done. ###---\n"
+    end
   end
   
   def collect_results
-    trading_days = date_range start_date, end_date
-    report_days = @portfolio.days.where date: trading_days
-    days_by_holding = Hash.new { |h, k| h[k] = [] }
-    
-    report_days.each do |day|
-      day.holdings.each do |holding|
-        c = holding.company
-        tag = c.ticker || c.code
-        days_by_holding[tag] << holding
-      end
-    end
-    
     results_by_holding = {}
     days_by_holding.each do |tag, holdings|
-      results_by_holding[tag] = {
+      results_by_holding[tag.upcase] = {
         performance: cumulative_performance( holdings ),
         contribution: cumulative_contribution( holdings )
       }
@@ -81,28 +90,66 @@ class Report
     results_by_holding
   end
   
+  def days_by_holding
+    trading_days = date_range start_date, end_date
+    report_days = @portfolio.days.where( date: trading_days ).includes( :holdings => :company ) 
+    days_by_holding = Hash.new { |h, k| h[k] = [] }
+    
+    report_days.each do |day|
+      day.holdings.each do |holding|
+        c = holding.company
+        # tag = c.ticker || c.code
+        days_by_holding[c.tag] << holding
+      end
+    end
+    
+    days_by_holding    
+  end
+  
   def cumulative_performance( holdings )
     puts "holdings is : " + holdings.inspect
     holdings.map(&:performance).inject( BigDecimal("1.0") ) { |s, x| s *= x }
   end
   
   def cumulative_contribution( holdings )
-    holdings.map(&:contribution).inject( BigDecimal("0.0") ) { |s, x| s += x }
+    scaled_contributions = holdings.map do |holding|
+      multiplier = cumulative_performance_multiplier( holding.date )
+      holding.contribution * multiplier
+    end
+    
+    scaled_contributions.inject( BigDecimal("0.0") ) { |s, x| s += x }
+  end
+  
+  def cumulative_performance_multiplier( date )
+    @cumulative_performance_multipliers ||= {}
+    
+    if @cumulative_performance_multipliers[date]
+      return @cumulative_performance_multipliers[date]
+    end
+    
+    days_to_scale_with = days.select { |d| d.date > date }
+    multiplier = days_to_scale_with.inject( BigDecimal( "1.0" ) ) { |s, x| s *= x.performance }
+    
+    @cumulative_performance_multipliers[date] = multiplier
   end
   
   def ensure_portfolio_days_are_present( portfolio, start_date, end_date )
     trading_days = date_range start_date, end_date
     trading_days.each do |date|
       portfolio_day = @portfolio.days.where( date: date )
-      portfolio_day.create! unless portfolio_day.exists?
+      unless portfolio_day.exists?
+        puts "*** downloading info for #{portfolio} on #{date}"
+        (d = portfolio_day.create!)
+        puts "*** successfully downloaded info for #{portfolio} on #{date}! ***"
+      end
     end    
   end
   
   def date_range(d0, d1)
-    (d0+1..d1).select(&:trading_day?)
+    (d0+1..d1).select(&:reportable_day?)
   end
   
   def days
-    @portfolio.days.where( date: date_range( @start_date, @end_date ) )
+    @portfolio.days.where( date: date_range( @start_date, @end_date ) ).ordered
   end
 end

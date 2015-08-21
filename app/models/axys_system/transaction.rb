@@ -28,6 +28,12 @@ class AxysSystem::Transaction < ActiveRecord::Base
   belongs_to :company, class_name: "AxysSystem::Company"
   belongs_to :holding, class_name: "Attribution::Holding"
   
+  scope :with_linked_holdings, -> { where("holding_id IS NOT NULL") }
+  scope :on, lambda { |d| where( date: (d.methods.include?( :to_date ) ? d.to_date : d ) ) }
+  scope :for_holding, lambda { |h| where( holding_id: h.id ) }
+  scope :usable, -> { where( "UPPER(code)<>'LI' AND UPPER(code)<>'LO'" ) }
+  scope :fund_flow, -> { where( "UPPER(code)='LI' OR UPPER(code)='LO' OR UPPER(code)='WD' OR UPPER(code)='dp'" ) }
+  
   attr_accessor :company_attribs
   
   CREDIT_CODES = {
@@ -67,6 +73,10 @@ class AxysSystem::Transaction < ActiveRecord::Base
     msg << "Sec: #{security}".ljust(5)
     msg << "SD-TYPE: #{sd_type}".ljust(15)
     msg << "SD-SYM: #{sd_symbol} "
+    msg << "(ON DATE #{date})"
+    msg << " (portfolio_id is ##{portfolio_id})"
+    msg << " (company_id is ##{company_id})"
+    msg << " (holding_id is ##{holding_id})"
   end
   
   def credit?
@@ -91,10 +101,14 @@ class AxysSystem::Transaction < ActiveRecord::Base
   end
   
   def accumulating?
-    ["dp", "by"].include? code.downcase    
+    ["dp", "by", "li"].include? code.downcase
   end
 
   def decrementing?
-    ["sl"].include? code.downcase    
+    ["sl", "wd", "dv", "lo"].include? code.downcase
+  end
+  
+  def flow?
+    ["li", "lo"].include? code.downcase
   end
 end

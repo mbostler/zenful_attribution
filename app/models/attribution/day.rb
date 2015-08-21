@@ -16,6 +16,8 @@ class Attribution::Day < ActiveRecord::Base
   
   validates :date, presence: true, uniqueness: { scope: :portfolio_id }
   
+  scope :ordered, -> { order(:date) }
+  
   before_create :ensure_axys_data_is_created
   after_create :calculate_daily_returns
   
@@ -27,7 +29,8 @@ class Attribution::Day < ActiveRecord::Base
     puts "permitted_axys_holdings is : " + permitted_axys_holdings.inspect
     permitted_axys_holdings.each do |axys_holding|
       unless holdings.exists? company_id: axys_holding.company_id
-        holdings.create! :axys_holding => axys_holding
+        h = holdings.create! :axys_holding => axys_holding
+        puts "\t just created #{h}"
       end
     end
     
@@ -42,10 +45,12 @@ class Attribution::Day < ActiveRecord::Base
   end
   
   def update_performance
-    bmv_value =  summed_holdings :bmv_value
+    bmv_with_prior_flows_value =  summed_holdings :bmv_with_prior_flows_value
+    # bmv_value =  bmv_with_flows_value
     emv_value =  summed_holdings :emv_value
     txns_value = summed_holdings :txns_value
-    perf = Attribution::PerformanceCalculator.calc :bmv_value => bmv_value,
+    # txns_value = transactions.inject( BigDecimal( "0.0" ) ) { |s, t| s += t.trade_amount }
+    perf = Attribution::PerformanceCalculator.calc :bmv_value => bmv_with_prior_flows_value,
                                       :emv_value => emv_value,
                                       :txns_value => txns_value
     update_attribute :performance, perf
@@ -60,11 +65,16 @@ class Attribution::Day < ActiveRecord::Base
     ActiveRecord::Base.logger = nil
     
     puts "BMV:  #{summed_holdings(:bmv_value)}"
+    puts "PFF:  #{summed_holdings(:prior_fund_flows_value)}"
     puts "EMV:  #{summed_holdings(:emv_value)}"
     puts "TXNS: #{summed_holdings(:txns_value)}"
     puts "P:    #{summed_holdings(:purchases_value)}"
     puts "S:    #{summed_holdings(:sales_value)}"
     puts "I:    #{summed_holdings(:income_value)}"
+    puts "--------------------------"
+    puts "BMV used for calculating pct weight: BMV + PFF = #{summed_holdings(:bmv_with_prior_flows_value)}"
+    # puts "Prior FF: #{summed_holdings(:prior_fund_flows_value)}"
+    # puts "BMV_FF value: #{summed_holdings(:bmv_value) + summed_holdings(:prior_fund_flows_value)}"
 
     ActiveRecord::Base.logger = old_logger
     self
@@ -86,7 +96,7 @@ class Attribution::Day < ActiveRecord::Base
   end
   
   def prior_date
-    date.prev_trading_day
+    date.prev_reportable_day
   end
   
   def axys_portfolio
@@ -97,18 +107,68 @@ class Attribution::Day < ActiveRecord::Base
     axys_holdings.select(&:permitted?)
   end
   
+  # TODO: FINISH!
   def axys_holdings
-    axys_portfolio.holdings.where( date: date )
+    emv_holdings = axys_portfolio.holdings.where( date: date ).includes( :company )
+    bmv_holdings = axys_portfolio.holdings.where( date: date.prev_reportable_day ).includes( :company )
+    
+    emv_company_tags = emv_holdings.map { |h| h.company and h.company.tag }
+    bmv_allowable_holdings = bmv_holdings.reject do |h|
+      h.company.nil? || emv_company_tags.include?( h.company.tag )
+    end
+    
+    emv_holdings + bmv_allowable_holdings
   end
-
+  
+  # def prior_fund_flows_value
+  #   summed_holdings :prior_fund_flows_value
+  # end
+  #
+  #
+  # def bmv_with_flows_value
+  #   bmv_value + fund_flows_value
+  # end
+  #
+  # def fund_flows
+  #   date_range = (date.prev_trading_day+1..date)
+  #   flows = axys_portfolio.transactions.where( date: date_range ).fund_flow
+  #   flows
+  # end
+  #
+  # def fund_flows_value
+  #   fund_flows.inject( BigDecimal( "0.0" ) ) do |s, x|
+  #     case x.code.upcase
+  #     when /li/i
+  #       s += x.trade_amount
+  #     when /lo/i
+  #       s -= x.trade_amount
+  #     else raise "not sure how to interpret code #{x.code} for #{x.inspect}"
+  #     end
+  #     s
+  #   end
+  # end
+  #
   def bmv_value
     holdings.inject( BigDecimal( "0.0" ) ) { |s, hld| s += hld.bmv_value }
+  end
+  
+  def bmv_with_prior_flows_value
+    holdings.inject( BigDecimal( "0.0" ) ) { |s, hld| s += hld.bmv_with_prior_flows_value }
+  end
+  
+  def txns_value
+    holdings.inject( BigDecimal( "0.0" ) ) { |s, hld| s += hld.txns_value }
+  end
+  
+  def transactions
+    # axys_portfolio.transactions.on( date )
+    axys_portfolio.transactions.on( date ).usable
   end
 
   def audit_transactions
     old_logger = ActiveRecord::Base.logger
     ActiveRecord::Base.logger = nil
-    txns = axys_portfolio.transactions.sort_by { |txn| txn.company.tag }
+    txns = transactions.sort_by { |txn| txn.company.tag }
     
     puts "===================================================================="
     puts "| #{txns.size} Transactions for #{portfolio.name} on #{date.strftime('%m/%d/%Y')}"
@@ -128,6 +188,11 @@ class Attribution::Day < ActiveRecord::Base
       puts h.inspect
     end
 
+    audit_totals
+  end
+  alias_method :adh, :audit_holdings
+  
+  def audit_totals
     puts "DAILY PERFORMANCE FOR #{axys_portfolio.name} on #{date}: #{performance}, ie: #{pretty_performance}"
     
     summed_perf = (holdings.inject(BigDecimal("0.0") ) { |s, h| s += h.contribution } * 100).round(6)
@@ -136,9 +201,8 @@ class Attribution::Day < ActiveRecord::Base
       puts "CHECK: OK! Perf is #{adj_calcd_perf}%"
     else
       puts "CHECK: BAD : calc'd perf is #{adj_calcd_perf}, summed perf is #{summed_perf}"
-    end
+    end    
   end
-  alias_method :adh, :audit_holdings
   
   def pretty_performance
     '%.5f %' % ((performance-1)*100)

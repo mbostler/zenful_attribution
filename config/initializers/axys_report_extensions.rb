@@ -20,7 +20,7 @@ class Axys::Report
     def cached_filepath
       class_root = self.class.to_s.underscore
     
-      filename_cleanse File.join( CACHE_BASEDIR, class_root, self.portfolio_name, cached_filename)
+      filename_cleanse File.join( CACHE_BASEDIR, class_root, self.portfolio_name, self.start.year.to_s, cached_filename)
     end
   
     def cached_filename

@@ -10,7 +10,7 @@
 #
 
 class AxysSystem::HoldingsReport < ActiveRecord::Base
-  AXYS_CLASS = Axys::AppraisalWithTickerAndCusipReport
+  AXYS_CLASS = Axys::AppraisalWithDecimalsReport
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
   
   validates :date, presence: true, uniqueness: { scope: :portfolio_id }

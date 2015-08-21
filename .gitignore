@@ -15,4 +15,6 @@
 /log/*
 !/log/.keep
 /spec/assets/data
+/spec/assets/focus
+/spec/assets/attribution_reports
 /tmp

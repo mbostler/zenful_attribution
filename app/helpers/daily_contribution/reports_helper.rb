@@ -1,0 +1,2 @@
+module DailyContribution::ReportsHelper
+end

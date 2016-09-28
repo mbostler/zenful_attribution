@@ -93,6 +93,7 @@ class AxysSystem::Transaction < ActiveRecord::Base
 
   def permitted?
     return false if company and company.excluded?
+    # return false if sd_symbol and sd_symbol =~ /pay/i
     true
   end
   

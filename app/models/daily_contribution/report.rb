@@ -1,0 +1,2 @@
+class DailyContribution::Report
+end

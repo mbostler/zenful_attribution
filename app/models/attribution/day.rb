@@ -34,6 +34,15 @@ class Attribution::Day < ActiveRecord::Base
       end
     end
     
+    permitted_company_ids = permitted_axys_holdings.map(&:company_id)
+    permitted_axys_transactions.each do |txn|
+      next if permitted_company_ids.include?( txn.company_id )
+      unless holdings.exists?( company_id: txn.company_id )
+        h = holdings.create! :company_id => txn.company_id
+        puts "\t *** just created holding FROM TRANSACTION #{txn.inspect}"
+      end
+    end
+    
     holdings.each(&:update_calcs)
     
     update_performance
@@ -107,6 +116,10 @@ class Attribution::Day < ActiveRecord::Base
     axys_holdings.select(&:permitted?)
   end
   
+  def permitted_axys_transactions
+    transactions.select(&:permitted?)
+  end
+  
   # TODO: FINISH!
   def axys_holdings
     emv_holdings = axys_portfolio.holdings.where( date: date ).includes( :company )
@@ -162,7 +175,7 @@ class Attribution::Day < ActiveRecord::Base
   
   def transactions
     # axys_portfolio.transactions.on( date )
-    axys_portfolio.transactions.on( date ).usable
+    @transactions ||= axys_portfolio.transactions.on( date ).usable
   end
 
   def audit_transactions
@@ -220,4 +233,23 @@ class Attribution::Day < ActiveRecord::Base
     fmt = "%m/%d/%y %H:%M:%S%p"
     "#<Attribution::Day ##{id} #{portfolio.name}|##{portfolio_id} on #{date} : #{pperf} | #{created_at.strftime(fmt)}|#{updated_at.strftime(fmt)}"
   end
+  
+  def self.ensure_portfolio_days_are_present( portfolio, dates )
+    sorted_dates = dates.sort
+    sorted_dates.each do |date|
+      portfolio_day = portfolio.days.where( date: date )
+      unless portfolio_day.exists?
+        puts "*** downloading info for #{portfolio} on #{date}"
+        (d = portfolio_day.create!)
+        puts "*** successfully downloaded info for #{portfolio} on #{date}! ***"
+      end
+    end
+    puts "Portfolio days ensured for #{portfolio.name} on #{sorted_dates.first} - #{sorted_dates.last}"
+  end
+  
+  def self.date_range(d0, d1)
+    (d0+1..d1).select(&:reportable_day?)
+  end
+  
+  
 end

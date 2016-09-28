@@ -10,7 +10,7 @@ end
 
 gem 'gserver'
 # gem 'axys', source: 'http://daruma-axys:8808'
-
+gem 'spreadsheet'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '4.2.2'

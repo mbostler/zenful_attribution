@@ -34,9 +34,11 @@ class AxysSystem::Company < ActiveRecord::Base
   end
   
   def excluded?
-    return false if code and code =~ /legalfeepay/i
-    return false if code and code =~ /redpay/i
-    code and code =~ /pay$/i
+    # return false if code and code =~ /legalfeepay/i
+    # return false if code and code =~ /redpay/i
+    # code and code =~ /pay$/i
+    return true if code and code =~ /legalfeepay/i
+    false
   end
   
   def tag

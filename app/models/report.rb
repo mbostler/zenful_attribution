@@ -24,6 +24,8 @@ class Report
   end
   
   def calculate!
+    Holiday.seed # ensure holidays are seeded
+    
     @portfolio = Attribution::Portfolio.where( name: @portfolio_name ).first_or_create
     
     # @portfolio.days.destroy_all # TODO: remove this after testing over!
@@ -46,7 +48,21 @@ class Report
   end
   
   def audit
-    @results.each do |tag, result|
+    print_results @results
+  end
+  
+  def audit_performance
+    sorted_results = @results.sort_by { |r| r[1][:performance]*-1 }
+    print_results sorted_results
+  end
+  
+  def audit_contribution
+    sorted_results = @results.sort_by { |r| r[1][:contribution]*-1 }
+    print_results sorted_results
+  end
+  
+  def print_results( result_data )
+    result_data.each do |tag, result|
       perf = perf2string result[:performance]
       contrib = contrib2string result[:contribution]
       puts "#{tag.ljust(7)}: perf: #{perf.rjust(10)} | contrib: #{contrib.rjust(10)}"
@@ -150,6 +166,11 @@ class Report
   end
   
   def days
-    @portfolio.days.where( date: date_range( @start_date, @end_date ) ).ordered
+    @days ||= @portfolio.days.where( date: date_range( @start_date, @end_date ) ).ordered
+  end
+  
+  def summarize
+    total_perf = ((total_results[:performance].to_f - 1)*100).round(3)
+    puts "total performance: #{total_perf} %"
   end
 end

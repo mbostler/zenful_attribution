@@ -55,4 +55,8 @@ class Holiday < ActiveRecord::Base
 		holiday = where( :day => date.day, :month => date.month, :year => date.year )
 		holiday.create! unless holiday.exists?
 	end
+  
+  def to_s
+    "#{month}/#{day}/#{year}"
+  end
 end

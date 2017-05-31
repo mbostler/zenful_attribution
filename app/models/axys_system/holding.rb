@@ -19,11 +19,11 @@
 #  updated_at     :datetime         not null
 #
 
-class AxysSystem::Holding < ActiveRecord::Base
+class AxysSystem::Holding < ApplicationRecord
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
-  belongs_to :company, class_name: "AxysSystem::Company"
-  belongs_to :bmv_holding, class_name: "Attribution::Holding", foreign_key: :bmv_holding_id
-  belongs_to :emv_holding, class_name: "Attribution::Holding", foreign_key: :emv_holding_id
+  belongs_to :company, class_name: "AxysSystem::Company", optional: true
+  belongs_to :bmv_holding, class_name: "Attribution::Holding", foreign_key: :bmv_holding_id, optional: true
+  belongs_to :emv_holding, class_name: "Attribution::Holding", foreign_key: :emv_holding_id, optional: true
 
   attr_accessor :company_attribs
   
@@ -35,8 +35,14 @@ class AxysSystem::Holding < ActiveRecord::Base
     end
   end
   
-  before_save :associate_company
+  before_save :associate_company, prepend: true
     
+  def permitted?
+    return false if company and company.excluded?
+    true
+  end
+
+private
   def associate_company
     unless @company_attribs.nil? || @company_attribs.empty?
       co = AxysSystem::Company.find_or_create_from_attribs!( @company_attribs )
@@ -44,8 +50,4 @@ class AxysSystem::Holding < ActiveRecord::Base
     end
   end
   
-  def permitted?
-    return false if company and company.excluded?
-    true
-  end
 end

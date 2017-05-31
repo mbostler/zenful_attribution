@@ -9,7 +9,7 @@
 #  updated_at   :datetime         not null
 #
 
-class AxysSystem::HoldingsReport < ActiveRecord::Base
+class AxysSystem::HoldingsReport < ApplicationRecord
   AXYS_CLASS = Axys::AppraisalWithDecimalsReport
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
   
@@ -24,9 +24,9 @@ class AxysSystem::HoldingsReport < ActiveRecord::Base
     other_attribs = { date: date, portfolio_id: portfolio.id }
     
     ActiveRecord::Base.transaction do
-      
       rep[:holdings].each do |holding_attribs|
-        portfolio.holdings.create! holding_attribs.merge( other_attribs )
+        attribs = holding_attribs.merge( other_attribs )
+        portfolio.holdings.create! attribs
       end
       
       rep[:cash_items].values.each do |cash_item_attribs|

@@ -11,7 +11,7 @@
 #  updated_at   :datetime         not null
 #
 
-class Attribution::Holding < ActiveRecord::Base
+class Attribution::Holding < ApplicationRecord
   include Auditing
   belongs_to :company, class_name: "AxysSystem::Company"
   belongs_to :day, class_name: "Attribution::Day"
@@ -329,6 +329,10 @@ class Attribution::Holding < ActiveRecord::Base
       puts "day bmv: #{fmt % day.bmv_value}"
       puts "====================="      
     end
+  end
+  
+  def permitted?
+    company and !company.excluded?
   end
   
 end

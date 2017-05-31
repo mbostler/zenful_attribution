@@ -1,4 +1,4 @@
-class CreateAttributionHoldings < ActiveRecord::Migration
+class CreateAttributionHoldings < ActiveRecord::Migration[5.1]
   def change
     create_table :attribution_holdings do |t|
       t.integer :company_id

@@ -23,10 +23,10 @@
 #  updated_at   :datetime         not null
 #
 
-class AxysSystem::Transaction < ActiveRecord::Base
+class AxysSystem::Transaction < ApplicationRecord
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
-  belongs_to :company, class_name: "AxysSystem::Company"
-  belongs_to :holding, class_name: "Attribution::Holding"
+  belongs_to :company, class_name: "AxysSystem::Company", optional: true
+  belongs_to :holding, class_name: "Attribution::Holding", optional: true
   
   scope :with_linked_holdings, -> { where("holding_id IS NOT NULL") }
   scope :on, lambda { |d| where( date: (d.methods.include?( :to_date ) ? d.to_date : d ) ) }

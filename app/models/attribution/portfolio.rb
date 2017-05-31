@@ -8,7 +8,7 @@
 #  updated_at :datetime         not null
 #
 
-class Attribution::Portfolio < ActiveRecord::Base
+class Attribution::Portfolio < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   has_many :days, class_name: "Attribution::Day", dependent: :destroy
   

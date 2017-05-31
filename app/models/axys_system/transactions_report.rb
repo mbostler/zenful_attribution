@@ -9,7 +9,7 @@
 #  updated_at   :datetime         not null
 #
 
-class AxysSystem::TransactionsReport < ActiveRecord::Base
+class AxysSystem::TransactionsReport < ApplicationRecord
   AXYS_CLASS = Axys::TransactionsWithSecuritiesReport
 
   belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
@@ -27,7 +27,8 @@ class AxysSystem::TransactionsReport < ActiveRecord::Base
     ActiveRecord::Base.transaction do
       
       rep[:transactions].each do |txn_attribs|
-        portfolio.transactions.create! txn_attribs.merge( other_attribs )
+        attribs = txn_attribs.merge( other_attribs )
+        portfolio.transactions.create! attribs
       end
       
     end

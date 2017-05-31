@@ -49,6 +49,8 @@ class Report
   
   def audit
     print_results @results
+    puts "total return: #{pp( @total_results[:performance]-1 )}"
+    true
   end
   
   def audit_performance
@@ -65,7 +67,7 @@ class Report
     result_data.each do |tag, result|
       perf = perf2string result[:performance]
       contrib = contrib2string result[:contribution]
-      puts "#{tag.ljust(7)}: perf: #{perf.rjust(10)} | contrib: #{contrib.rjust(10)}"
+      puts "#{tag.ljust(7)}: perf: #{perf.rjust(12)}   |   contrib: #{contrib.rjust(12)}"
     end
   end
   
@@ -112,7 +114,8 @@ class Report
     days_by_holding = Hash.new { |h, k| h[k] = [] }
     
     report_days.each do |day|
-      day.holdings.each do |holding|
+      day.permitted_holdings.each do |holding|
+      # day.holdings.each do |holding|
         c = holding.company
         # tag = c.ticker || c.code
         days_by_holding[c.tag] << holding
@@ -172,5 +175,15 @@ class Report
   def summarize
     total_perf = ((total_results[:performance].to_f - 1)*100).round(3)
     puts "total performance: #{total_perf} %"
+  end
+  
+  def audit_total
+    days.each do |day|
+      puts "#{day.date} : #{pp( day.performance-1 )}"
+    end
+  end
+  
+  def recalc!
+    days.each(&:recalc!)
   end
 end

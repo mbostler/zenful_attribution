@@ -1,4 +1,4 @@
-class CreateAxysSystemPortfolios < ActiveRecord::Migration
+class CreateAxysSystemPortfolios < ActiveRecord::Migration[5.1]
   def change
     create_table :axys_system_portfolios do |t|
       t.string :name

@@ -1,4 +1,4 @@
-class CreateAxysSystemTransactions < ActiveRecord::Migration
+class CreateAxysSystemTransactions < ActiveRecord::Migration[5.1]
   def change
     create_table :axys_system_transactions do |t|
       t.integer :portfolio_id

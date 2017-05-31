@@ -10,7 +10,7 @@
 #  updated_at :datetime         not null
 #
 
-class Holiday < ActiveRecord::Base
+class Holiday < ApplicationRecord
 	validates :day, :presence => true
 	validates :month, :presence => true
 

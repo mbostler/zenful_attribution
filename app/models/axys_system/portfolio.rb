@@ -8,7 +8,7 @@
 #  updated_at :datetime         not null
 #
 
-class AxysSystem::Portfolio < ActiveRecord::Base
+class AxysSystem::Portfolio < ApplicationRecord
   has_many :companies, class_name: "AxysSystem::Company"
   has_many :holdings, class_name: "AxysSystem::Holding", dependent: :destroy
   has_many :transactions, class_name: "AxysSystem::Transaction", dependent: :destroy

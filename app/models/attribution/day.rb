@@ -10,7 +10,7 @@
 #  updated_at   :datetime         not null
 #
 
-class Attribution::Day < ActiveRecord::Base
+class Attribution::Day < ApplicationRecord
   belongs_to :portfolio, class_name: "Attribution::Portfolio"
   has_many :holdings, class_name: "Attribution::Holding", dependent: :destroy
   
@@ -110,6 +110,10 @@ class Attribution::Day < ActiveRecord::Base
   
   def axys_portfolio
     @axys_portfolio ||= portfolio.axys_portfolio
+  end
+  
+  def permitted_holdings
+    holdings.select(&:permitted?)
   end
   
   def permitted_axys_holdings

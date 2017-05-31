@@ -1,4 +1,4 @@
-class CreateAxysSystemCompanies < ActiveRecord::Migration
+class CreateAxysSystemCompanies < ActiveRecord::Migration[5.1]
   def change
     create_table :axys_system_companies do |t|
       t.string :cusip

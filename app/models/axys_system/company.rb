@@ -13,12 +13,12 @@
 #  symbol     :string
 #
 
-class AxysSystem::Company < ActiveRecord::Base
-  belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
+class AxysSystem::Company < ApplicationRecord
+  # belongs_to :portfolio, class_name: "AxysSystem::Portfolio"
   has_many :holdings, class_name: "AxysSystem::Holding"
   has_many :transactions, class_name: "AxysSystem::Transaction"
   
-  validates :cusip, uniqueness: true, unless: "cusip.blank?"
+  validates :cusip, uniqueness: true, unless: Proc.new { |c| c.cusip.blank? }
   
   def self.find_or_create_from_attribs!( attribs )
     [:cusip, :code, :symbol].each do |unique_sym|
@@ -37,7 +37,14 @@ class AxysSystem::Company < ActiveRecord::Base
     # return false if code and code =~ /legalfeepay/i
     # return false if code and code =~ /redpay/i
     # code and code =~ /pay$/i
-    return true if code and code =~ /legalfeepay/i
+    forbidden_tags = %w(legalfeepay intacc admin ticket cust acct)
+    return true if forbidden_tags.any?{ |t| tag.upcase == t.upcase }
+
+    # NOTE: THE BELOW 2 LINES WORK PERFECTLY FOR 
+    # - MARYLAND 4/30/2017 - 5/19/2017
+    # return true if code and code =~ /legalfeepay/i
+    # return true if tag =~ /manfee/i
+
     false
   end
   

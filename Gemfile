@@ -6,7 +6,7 @@ git_source(:github) do |repo_name|
 end
 
 gem 'gserver'
-gem 'axys', '0.3.12'#, source: 'http://daruma-axys:8808/'
+gem 'axys', '0.3.12', source: 'http://daruma-axys:8808/'
 gem 'spreadsheet'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
@@ -54,6 +54,9 @@ group :development do
   gem 'spring-watcher-listen', '~> 2.0.0'
   gem 'annotate'
   
+  gem 'capistrano'
+  gem 'capistrano-rails'
+  gem 'capistrano-rvm'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

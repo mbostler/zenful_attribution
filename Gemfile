@@ -6,7 +6,7 @@ git_source(:github) do |repo_name|
 end
 
 gem 'gserver'
-gem 'axys', '0.3.12', source: 'http://daruma-axys:8808/'
+# gem 'axys', '0.3.12', source: 'http://daruma-axys:8808/'
 gem 'spreadsheet'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'

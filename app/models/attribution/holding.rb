@@ -26,6 +26,17 @@ class Attribution::Holding < ApplicationRecord
   
   after_create :perform_after_create_actions
   
+  def run_source_report
+    report_klass = AxysSystem::HoldingsReport::AXYS_CLASS
+    rep = report_klass.new portfolio_name: axys_portfolio.name, start: date
+    rep.run_without_caching :remote => true
+    
+    rep
+  end
+  
+  def audit_bmv
+    
+  end
   def perform_after_create_actions
     associate_axys_records
   end

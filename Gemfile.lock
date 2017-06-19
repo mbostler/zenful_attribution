@@ -1,5 +1,4 @@
 GEM
-  remote: http://daruma-axys:8808/
   remote: https://rubygems.org/
   specs:
     actioncable (5.1.1)
@@ -205,4 +204,4 @@ DEPENDENCIES
   web-console (>= 3.3.0)
 
 BUNDLED WITH
-   1.15.0
+   1.15.1

@@ -41,7 +41,15 @@ class AxysSystem::Holding < ApplicationRecord
     return false if company and company.excluded?
     true
   end
-
+  
+  def run_source
+    report_klass = AxysSystem::HoldingsReport::AXYS_CLASS
+    rep = report_klass.new portfolio_name: portfolio.name, start: date
+    rep.run_without_caching :remote => true
+    
+    rep
+  end
+  
 private
   def associate_company
     unless @company_attribs.nil? || @company_attribs.empty?

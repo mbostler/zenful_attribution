@@ -4,6 +4,8 @@ class Report
   
   def initialize( portfolio_name, start_date, end_date )
     @portfolio_name = portfolio_name
+    @portfolio = Attribution::Portfolio.where( name: @portfolio_name ).first_or_create
+    
     @start_date = datify start_date
     @end_date = datify end_date
     validate_params
@@ -25,8 +27,6 @@ class Report
   
   def calculate!
     Holiday.seed # ensure holidays are seeded
-    
-    @portfolio = Attribution::Portfolio.where( name: @portfolio_name ).first_or_create
     
     # @portfolio.days.destroy_all # TODO: remove this after testing over!
     

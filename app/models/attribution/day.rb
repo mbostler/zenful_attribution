@@ -66,7 +66,12 @@ class Attribution::Day < ApplicationRecord
   end
   
   def summed_holdings( sym )
-    holdings.inject( BigDecimal("0.0") ) { |s, h| s += h.send( sym ) }
+    # holdings.inject( BigDecimal("0.0") ) { |s, h| s += h.send( sym ) }
+    puts "sym is: #{sym.inspect}"
+    permitted_holdings.inject( BigDecimal("0.0") ) do |s, h| 
+      puts "h is: #{h.inspect}"
+      s += h.send( sym )
+    end
   end
   
   def audit

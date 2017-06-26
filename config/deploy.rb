@@ -47,6 +47,6 @@ end
 
 task :restart_unicorn do
   on roles(:app) do
-    # execute "sudo service zenful_attribution_unicorn restart"
+    execute "sudo service zenful_attribution_unicorn restart"
   end  
 end

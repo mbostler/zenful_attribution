@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ZenfulAttribution</title>
+  <title>Daruma Analysis</title>
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
   <%= javascript_include_tag 'jquery_init' %>
   <%= javascript_include_tag 'application',
@@ -10,6 +10,9 @@
 </head>
 <body>
 <h1>Daruma</h1>
+<div>
+<p id="notice"><%= notice %></p>
+</div>
 <%= yield %>
 
 </body>

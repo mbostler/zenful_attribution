@@ -37,7 +37,10 @@ class AxysSystem::Company < ApplicationRecord
     # return false if code and code =~ /legalfeepay/i
     # return false if code and code =~ /redpay/i
     # code and code =~ /pay$/i
-    forbidden_tags = %w(legalfeepay intacc admin ticket cust acct)
+    forbidden_tags = %w(
+      legalfeepay intacc admin ticket cust acct manfeepay custfeepay
+      acctfeepay adminfeepay redpay ticketfeepay legalfee manfee
+                        )
     return true if forbidden_tags.any?{ |t| tag.upcase == t.upcase }
 
     # NOTE: THE BELOW 2 LINES WORK PERFECTLY FOR 

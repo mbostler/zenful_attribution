@@ -1,4 +1,8 @@
 class Report
+  extend ActiveModel::Naming
+  def to_model
+    # dummy method to appease rails
+  end
   include Auditing
   attr_accessor :portfolio_name, :start_date, :end_date, :results, :total_results, :portfolio
   
@@ -132,6 +136,7 @@ class Report
   
   def cumulative_contribution( holdings )
     scaled_contributions = holdings.map do |holding|
+      puts "holding is: #{holding.inspect}"
       multiplier = cumulative_performance_multiplier( holding.date )
       holding.contribution * multiplier
     end

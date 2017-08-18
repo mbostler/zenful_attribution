@@ -41,6 +41,7 @@ class AxysSystem::Company < ApplicationRecord
       legalfeepay intacc admin ticket cust acct manfeepay custfeepay
       acctfeepay adminfeepay redpay ticketfeepay legalfee manfee
                         )
+    return true if cusip == "FFALX" && ticker.nil? && symbol.nil?
     return true if forbidden_tags.any?{ |t| tag.upcase == t.upcase }
 
     # NOTE: THE BELOW 2 LINES WORK PERFECTLY FOR 

@@ -126,6 +126,7 @@ class Attribution::Day < ApplicationRecord
   end
   
   def permitted_axys_transactions
+    transactions.each { |t| puts "***** t is: #{t.inspect}" }
     transactions.select(&:permitted?)
   end
   

@@ -34,6 +34,9 @@ class AxysSystem::Company < ApplicationRecord
   end
   
   def excluded?
+    # THE FOLLOWING IS USED TO IGNORE +&smcomp MUTUAL FUND SELL ON 2/2/2010
+    return true if (ticker || code || symbol).nil?
+
     # return false if code and code =~ /legalfeepay/i
     # return false if code and code =~ /redpay/i
     # code and code =~ /pay$/i
@@ -42,6 +45,7 @@ class AxysSystem::Company < ApplicationRecord
       acctfeepay adminfeepay redpay ticketfeepay legalfee manfee
                         )
     return true if forbidden_tags.any?{ |t| tag.upcase == t.upcase }
+    
 
     # NOTE: THE BELOW 2 LINES WORK PERFECTLY FOR 
     # - MARYLAND 4/30/2017 - 5/19/2017
@@ -52,7 +56,11 @@ class AxysSystem::Company < ApplicationRecord
   end
   
   def tag
-    (ticker || code || symbol).upcase
+    t = (ticker || code || symbol || "(No tag found)") 
+    if t.nil?
+      raise "could not find tag for company: #{self.inspect}"
+    end
+    t.upcase
   end
 end
   

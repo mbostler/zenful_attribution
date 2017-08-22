@@ -65,6 +65,7 @@ class AxysSystem::Transaction < ApplicationRecord
   end
   
   def inspect
+    puts "*+*+*+*+*+*+*+ self is: #{self}"
     msg = ""
     msg = "<# AxysSystem::Transaction ##{id.to_s.ljust(5)} "
     msg << "[#{company.tag}]#{cusip}|#{symbol}".ljust(25)

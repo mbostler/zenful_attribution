@@ -68,7 +68,7 @@ class AxysSystem::Transaction < ApplicationRecord
     puts "*+*+*+*+*+*+*+ self is: #{self}"
     msg = ""
     msg = "<# AxysSystem::Transaction ##{id.to_s.ljust(5)} "
-    msg << "[#{company.tag}]#{cusip}|#{symbol}".ljust(25)
+    msg << "[#{company.tag rescue "<ERROR>"}]#{cusip}|#{symbol}".ljust(25)
     msg << "#{quantity.to_i}@$#{'%.2f' % trade_amount }".ljust(23)
     msg << "Cd: #{code}".ljust(8)
     msg << "Sec: #{security}".ljust(5)
